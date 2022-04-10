@@ -1,0 +1,224 @@
+À¯È¿¼º °Ë»ç
+
+1.È¸¿ø°¡ÀÔ formÅÂ±× ±¸Çö
+-user/join.jsp
+<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
+
+...
+<div class="card shadow">
+    <div class="card-body">
+       ÀÛ¼ººÎºĞ
+	<form:form action="${root }user/join_pro" method='post' modelAttribute="joinUserBean">
+        »èÁ¦
+        <form action="${root }user/login" method="get">
+        ...
+        </form>»èÁ¦ÈÄ </form:form>
+------------ÀÌ¸§±¸Çö------------
+        -»èÁ¦µÉºÎºĞ-
+        <div class="form-group">
+		<label for="user_name">ÀÌ¸§</label>
+		<input type="text" id="user_name" name="user_name" class="form-control"/>
+	</div>
+        »èÁ¦ÈÄ »ğÀÔ
+        <div class="form-group">
+		<form:label path="user_name">ÀÌ¸§</form:label>
+		<form:input path="user_name" class='form-control'/>
+		<form:errors path="user_name" style='color:red'/>
+	</div>
+------------¾ÆÀÌµğ±¸Çö----------------
+        -¼öÁ¤µÉºÎºĞ-
+       <label for="user_id">¾ÆÀÌµğ</label>
+		<div class="input-group">
+		<input type="text" id="user_id" name="user_id" class="form-control"/>
+        ¼öÁ¤ÈÄ
+        <div class="form-group">
+		<form:label path="user_id">¾ÆÀÌµğ</form:label>
+			<div class="input-group">
+				<form:input path="user_id" class='form-control'/>
+				<div class="input-group-append">
+					<button type="button" class="btn btn-primary">Áßº¹È®ÀÎ</button>
+				</div>
+			</div>
+			<form:errors path="user_id" style='color:red'/>
+	</div>
+--------------ºñ¹ø±¸Çö----------------------------------
+          -¼öÁ¤µÉºÎºĞ-
+        <label for="user_pw">ºñ¹Ğ¹øÈ£</label>
+	<input type="password" id="user_pw" name="user_pw" class="form-control"/>
+        ¼öÁ¤ÈÄ
+        <div class="form-group">
+	    <form:label path="user_pw">ºñ¹Ğ¹øÈ£</form:label>
+	    <form:password path="user_pw" class='form-control'/>
+	    <form:errors path='user_pw' style='color:red'/>
+        </div>
+--------------ºñ¹øÈ®ÀÎ--------------------------------------
+-UserBean.java -> private String user_pw2;Ãß°¡(getter and setter)
+ 
+
+          -¼öÁ¤µÉºÎºĞ-
+        <label for="user_pw2">ºñ¹Ğ¹øÈ£ È®ÀÎ</label>
+	<input type="password" id="user_pw2" name="user_pw2" class="form-control"/>
+        ¼öÁ¤ÈÄ
+        <div class="form-group">
+		<form:label path="user_pw2">ºñ¹Ğ¹øÈ£ È®ÀÎ</form:label>
+		<form:password path="user_pw2" class='form-control'/>
+		<form:errors path='user_pw2' style='color:red'/>
+	</div>
+-----------------È¸¿ø°¡ÀÔ----------------------------
+¼öÁ¤Àü
+<button type="submit" class="btn btn-primary">È¸¿ø°¡ÀÔ</button>
+¼öÁ¤ÈÄ
+<form:button class='btn btn-primary'>È¸¿ø°¡ÀÔ</form:button>
+
+-------------------------------------------------
+-UserController.java ÄÚµå Ãß°¡
+@GetMapping("/join")
+public String join(@ModelAttribute("joinUserBean") UserBean joinUserBean) {
+return "user/join";
+	}
+
+=====================================================================================
+2.À¯È¿¼º ¼¼ÆÃ
+- UserBean.java
+
+	private int user_idx;
+	
+	@Size(min=2, max=4)
+	@Pattern(regexp = "[°¡-ÆR]*")
+	private String user_name;
+	
+	@Size(min=4, max=20)
+	@Pattern(regexp = "[a-zA-Z0-9]*")
+	private String user_id;
+	
+	@Size(min=4, max=20)
+	@Pattern(regexp = "[a-zA-Z0-9]*")
+	private String user_pw;
+	
+	@Size(min=4, max=20)
+	@Pattern(regexp = "[a-zA-Z0-9]*")
+	private String user_pw2;
+
+---------------------------------------
+-UserController.java
+ÄÚµå Ãß°¡
+
+@PostMapping("/join_pro")
+public String join_pro(@Valid @ModelAttribute("joinUserBean") UserBean joinUserBean, BindingResult result) {
+	if(result.hasErrors()) {
+		return "user/join";
+	}
+		
+		return "user/join_success";
+	}
+
+ÄÄÆÄÀÏ½Ã È¸¿ø°¡ÀÔ ¹öÆ°À» ´©¸£¸é ¿À·ù¸Ş¼¼Áö Ãâ·ÂµÊ
+===========================================================
+3.XML
+-UserBean.java º¹ºÙ
+-join.jsp º¹ºÙ
+-UserController.java º¹ºÙ
+=====================================================
+4.JAVA À¯È¿¼º µî·Ï
+
+-WEB-INF/properties-> error_message.properties
+Size.joinUserBean.user_name = »ç¿ëÀÚ ÀÌ¸§Àº 2 ~ 4±ÛÀÚ¿©¾ß ÇÕ´Ï´Ù
+Size.joinUserBean.user_id = »ç¿ëÀÚ ¾ÆÀÌµğ´Â 4 ~ 20±ÛÀÚ¿©¾ß ÇÕ´Ï´Ù
+Size.joinUserBean.user_pw = ºñ¹Ğ¹øÈ£´Â 4 ~ 20±ÛÀÚ¿©¾ß ÇÕ´Ï´Ù
+Size.joinUserBean.user_pw2 = ºñ¹Ğ¹øÈ£´Â 4 ~ 20±ÛÀÚ¿©¾ß ÇÕ´Ï´Ù
+Pattern.joinUserBean.user_name = »ç¿ëÀÚ ÀÌ¸§Àº ÇÑ±Û¸¸ Çã¿ëÇÕ´Ï´Ù
+Pattern.joinUserBean.user_id = »ç¿ëÀÚ ¾ÆÀÌµğ´Â ¿µ¹®´ë¼Ò¹®ÀÚ, ¼ıÀÚ¸¸ Çã¿ëÇÕ´Ï´Ù
+Pattern.joinUserBean.user_pw = ºñ¹Ğ¹øÈ£´Â ¿µ¹®´ë¼Ò¹®ÀÚ, ¼ıÀÚ¸¸ Çã¿ëÇÕ´Ï´Ù
+Pattern.joinUserBean.user_pw2 = ºñ¹Ğ¹øÈ£´Â ¿µ¹®´ë¼Ò¹®ÀÚ, ¼ıÀÚ¸¸ Çã¿ëÇÕ´Ï´Ù
+
+¸Ş¼¼Áö µî·Ï
+-ServletAppContext.java
+
+	@Bean
+	public ReloadableResourceBundleMessageSource messageSource() {
+		ReloadableResourceBundleMessageSource res = new ReloadableResourceBundleMessageSource();
+		res.setBasenames("/WEB-INF/properties/error_message");
+		return res;
+	}
+¿À·ù
+=========================================================
+5.properties ¿À·ù (¸Ş¼¼Áö¿Í property Ãæµ¹)
+¼Ò½º¿Í ¸Ş¼¼Áö º°µµ°ü¸®ÇÏµµ·Ï property¸¦ BeanÀ¸·Îµî·Ï
+	@Bean
+	public static PropertySourcesPlaceholderConfigurer PropertySourcesPlaceholderConfigurer() {
+		return new PropertySourcesPlaceholderConfigurer();
+	}
+================================================================
+6.XML ¸Ş¼¼Áö µî·Ï
+-WEB-INF/properties-> error_message.properties º¹ºÙ
+
+-servlet-context.xml ¸Ç¾Æ·¡ ±¸Çö
+	<!-- MessageSource¸¦ µî·ÏÇÑ´Ù -->
+	<beans:bean class='org.springframework.context.support.ReloadableResourceBundleMessageSource' id='messageSource'>
+		<beans:property name="basenames">
+			<beans:list>
+				<beans:value>/WEB-INF/properties/error_message</beans:value>
+			</beans:list>
+		</beans:property>
+	</beans:bean>
+	
+	<!-- Message Á¢±ÙÀ» À§ÇÑ Á¢±ÙÀÚ µî·Ï -->
+	<beans:bean class='org.springframework.context.support.MessageSourceAccessor'>
+		<beans:constructor-arg ref='messageSource'/>
+	</beans:bean>
+
+=============================================================
+7.ºñ¹øÀÌ ºñ¹ø2¿Í ÀÏÄ¡ÇÏ´ÂÁö Á¡°Ë
+-kr.co.softsoldesk.validator -> UserValidator.java
+
+import org.springframework.validation.Errors;
+import org.springframework.validation.Validator;
+import kr.co.softcampus.beans.UserBean;
+
+public class UserValidator implements Validator{
+
+	@Override
+	public boolean supports(Class<?> clazz) {
+		// TODO Auto-generated method stub
+		return UserBean.class.isAssignableFrom(clazz);
+	}
+
+	@Override
+	public void validate(Object target, Errors errors) {
+		// TODO Auto-generated method stub
+                //Çüº¯È¯
+		UserBean userBean = (UserBean)target;
+		
+		if(userBean.getUser_pw().equals(userBean.getUser_pw2()) == false) {
+			errors.rejectValue("user_pw", "NotEquals");
+			errors.rejectValue("user_pw2", "NotEquals");
+		}
+	}
+	
+}
+
+-WEB-INF/properties-> error_message.properties ¸Ş¼¼Áö Ãß°¡
+NotEquals.joinUserBean.user_pw = ºñ¹Ğ¹øÈ£°¡ ÀÏÄ¡ÇÏÁö ¾Ê½À´Ï´Ù
+NotEquals.joinUserBean.user_pw2 = ºñ¹Ğ¹øÈ£°¡ ÀÏÄ¡ÇÏÁö ¾Ê½À´Ï´Ù
+
+-UserController.java
+	@InitBinder
+	public void initBinder(WebDataBinder binder) {
+		UserValidator validator1 = new UserValidator();
+		binder.addValidators(validator1);
+	}
+
+=========================================================================
+8.XML¿¡ ºñ¹øÈ®ÀÎ Àû¿ë
+
+-kr.co.softsoldesk.validator º¹ºÙ
+
+-WEB-INF/properties-> error_message.properties ¸Ş¼¼Áö Ãß°¡ºĞ º¹»ç
+ 
+-UserController.java Ãß°¡ºĞ º¹ºÙ
+	@InitBinder
+	public void initBinder(WebDataBinder binder) {
+		UserValidator validator1 = new UserValidator();
+		binder.addValidators(validator1);
+	}
+=================================================================

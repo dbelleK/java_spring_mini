@@ -1,0 +1,29 @@
+1.오라클 SQL 구현
+
+- 오라클 데이터베이스 구현(미니프로젝트 데이터베이스 사용)
+
+- 테이블 속성과 똑같은 필드로 beans생성
+- kr.co.softsoldesk.beans
+-BoardInfoBean.java
+public class BoardInfoBean {
+	private int board_info_idx;
+	private String board_info_name;
+
+-UserBean.java
+public class UserBean {
+	private int user_idx;
+	private String user_name;
+	private String user_id;
+	private String user_pw;
+
+-ContentBean.java
+public class ContentBean {
+	private int content_idx;
+	private String content_subject;
+	private String content_text;
+	private String content_file;
+	private int content_writer_idx;
+	private int content_board_idx;
+	private String content_date;
+=========================================================
+- MiniprojectXML프로젝트에 kr.co.softsoldesk.beans 복 붙

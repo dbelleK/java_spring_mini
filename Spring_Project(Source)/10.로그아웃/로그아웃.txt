@@ -1,0 +1,108 @@
+로그아웃
+
+1.로그인 상태
+로그인과 회원가입은 로그인을 안했을 경우
+정보수정과 로그아웃은 로그인을 했을 경우
+
+
+-TopMenuInterceptor.java
+추가
+	private TopMenuService topMenuService;
+	*** private UserBean loginUserBean; ***
+	
+	public TopMenuInterceptor(TopMenuService topMenuService, UserBean loginUserBean) {
+		this.topMenuService = topMenuService;
+		*** this.loginUserBean = loginUserBean; ***
+	}
+	
+	@Override
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+			throws Exception {
+		// TODO Auto-generated method stub
+		List<BoardInfoBean> topMenuList = topMenuService.getTopMenuList();
+		request.setAttribute("topMenuList", topMenuList);
+		*** request.setAttribute("loginUserBean", loginUserBean); ***
+		
+		return true;
+	}
+
+-------------------
+-ServletAppContext.java
+추가
+	@Resource(name = "loginUserBean")
+	private UserBean loginUserBean;
+	...
+	TopMenuInterceptor topMenuInterceptor = new TopMenuInterceptor(topMenuService, loginUserBean);
+
+
+---------------------------
+- top_menu.jsp
+		<ul class="navbar-nav ml-auto">
+			<c:choose>
+				<c:when test="${loginUserBean.userLogin == true }">
+					<li class="nav-item">
+						<a href="${root }user/modify" class="nav-link">정보수정</a>
+					</li>
+					<li class="nav-item">
+						<a href="${root }user/logout" class="nav-link">로그아웃</a>
+					</li>
+				</c:when>
+				<c:otherwise>
+					<li class="nav-item">
+						<a href="${root }user/login" class="nav-link">로그인</a>
+					</li>
+					<li class="nav-item">
+						<a href="${root }user/join" class="nav-link">회원가입</a>
+					</li>
+				</c:otherwise>
+			</c:choose>
+========================================================
+XML
+- TopMenuInterceptor.java
+	@Autowired
+	private TopMenuService topMenuService;
+	
+	***
+	@Resource(name = "loginUserBean")
+	@Lazy
+	private UserBean loginUserBean;
+	***
+	
+	
+	@Override
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+			throws Exception {
+		// TODO Auto-generated method stub
+		List<BoardInfoBean> topMenuList = topMenuService.getTopMenuList();
+		request.setAttribute("topMenuList", topMenuList);
+		*** request.setAttribute("loginUserBean", loginUserBean); ***
+		
+		return true;
+	}
+
+
+- top_menu.jsp 복 붙
+
+=======================================================================================
+2.로그아웃 상태
+
+-UserBean.java에 보면 private boolean userLogin; 로그인 상태 변수방이 선언되어 있음
+-UserController.java
+	@GetMapping("/logout")
+	public String logout() {
+		
+		*** loginUserBean.setUserLogin(false); ***
+		
+		return "user/logout";
+	}
+
+======================================================
+XML
+-UserController.java
+@GetMapping("/logout")
+	public String logout() {
+		
+		loginUserBean.setUserLogin(false);
+		
+		return "user/logout";
+	}

@@ -1,0 +1,163 @@
+저장처리
+
+1.sql 구현
+-Usermapper.java 추가
+@Insert("insert into user_table (user_idx, user_name, user_id, user_pw) " +
+			"values (user_seq.nextval, #{user_name}, #{user_id}, #{user_pw})")
+	void addUserInfo(UserBean joinUserBean);
+
+-UserDao.java 데이터베이스 구현
+@Autowired
+	private UserMapper userMapper;
+	
+	public String checkUserIdExist(String user_id) {
+		return userMapper.checkUserIdExist(user_id);
+	}
+	
+	***public void addUserInfo(UserBean joinUserBean) {
+		userMapper.addUserInfo(joinUserBean);
+	}***
+
+-UserService.java 메소드 구현
+@Service
+public class UserService {
+	
+	@Autowired
+	private UserDao userDao;
+	
+	public boolean checkuserIdExist(String user_id) {
+		
+		String user_name = userDao.checkUserIdExist(user_id);
+		
+		if(user_name == null) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	***public void addUserInfo(UserBean joinUserBean) {
+		userDao.addUserInfo(joinUserBean);
+	}***
+
+}
+
+-UserController.java
+	@Autowired
+	private UserService userService;
+...
+
+	@PostMapping("/join_pro")
+	public String join_pro(@Valid @ModelAttribute("joinUserBean") UserBean joinUserBean, BindingResult result) {
+		if(result.hasErrors()) {
+			return "user/join";
+		}
+		
+		userService.addUserInfo(joinUserBean);
+		
+		return "user/join_success";
+	}
+
+-join_success.jsp
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var="root" value="${pageContext.request.contextPath }/"/>
+<script>
+	alert('가입이 완료되었습니다')
+	location.href = "${root}user/login"
+</script>
+
+컴파일후 같은 아이디로 가입시도시 중복에러 확인
+=================================================================
+XML
+
+-Usermapper.java 추가분활용
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+					    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="user">
+	<select id="checkUserIdExist" parameterType="java.lang.String" resultType="java.lang.String">
+		<![CDATA[
+			select user_name
+			from user_table
+			where user_id = #{user_id}
+		]]>
+	</select>
+	
+	<insert id="addUserInfo" parameterType="kr.co.softsoldesk.beans.UserBean">
+		<![CDATA[
+			insert into user_table (user_idx, user_name, user_id, user_pw)
+			values (user_seq.nextval, #{user_name}, #{user_id}, #{user_pw})
+		]]>
+	</insert>
+</mapper>
+
+-UserDao.java 데이터베이스 구현
+@Repository
+public class UserDao {
+	
+	@Autowired
+	private SqlSessionTemplate sqlSessionTemplate;
+	
+	public String checkUserIdExist(String user_id) {
+		return sqlSessionTemplate.selectOne("user.checkUserIdExist", user_id);
+	}
+	
+	****public void addUserInfo(UserBean joinUserBean) {
+		sqlSessionTemplate.insert("user.addUserInfo", joinUserBean);
+	}***
+}
+
+
+
+
+-UserService.java 메소드 구현
+
+@Service
+public class UserService {
+	
+	@Autowired
+	private UserDao userDao;
+	
+	public boolean checkuserIdExist(String user_id) {
+		
+		String user_name = userDao.checkUserIdExist(user_id);
+		
+		if(user_name == null) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
+	***public void addUserInfo(UserBean joinUserBean) {
+		userDao.addUserInfo(joinUserBean);
+	}***
+}
+
+-UserController.java
+	@Autowired
+	private UserService userService;
+	...
+	@PostMapping("/join_pro")
+	public String join_pro(@Valid @ModelAttribute("joinUserBean") UserBean joinUserBean, BindingResult result) {
+		if(result.hasErrors()) {
+			return "user/join";
+		}
+		
+		userService.addUserInfo(joinUserBean);
+		
+		return "user/join_success";
+	}
+
+
+
+-join_success.jsp 자바에서 구현된것으로 붙여넣기
+============================================================
+
+
+
+
+
+

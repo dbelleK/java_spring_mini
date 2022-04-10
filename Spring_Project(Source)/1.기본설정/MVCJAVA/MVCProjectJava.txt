@@ -1,0 +1,260 @@
+﻿MVCProjectJava
+
+1.
+-HomeController.java
+@Controller
+public class HomeController {
+	
+	@RequestMapping(value = "/", method = RequestMethod.GET)
+	public String home() {
+		return "redirect:/main";
+	}
+}
+
+컴파일 Error
+================================
+2.
+-MainController.java
+@Controller
+public class MainController {
+	
+	@GetMapping("/main")
+	public String main() {
+		return "main";
+	}
+}
+-views => main.jsp
+
+MiniProjectHTML -> index.html 복사 ==> main.jsp에 붙여넣기
+
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+...
+
+컴파일 확인
+============================
+3. 상단 분리
+
+-main.jsp 
+<!-- 상단 메뉴 부분 -->잘라내기 
+-views/include -> top_menu.jsp에 붙여넣기
+
+컴파일시 상단메뉴 없어지므로
+main.jsp에서 
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+상단메뉴있던 자리에
+<c:import url="/WEB-INF/views/include/top_menu.jsp"/>
+
+=========================================
+
+4.하단분리
+
+-main.jsp 
+<div class="container-fluid bg-dark text-white" style="margin-top:50px;padding-top:30px;padding-bottom:30px">
+	<div class="container">
+		<p>http://www.softSoldesk.co.kr</p>
+		<p>게시판 예제</p>
+		<p>사업자번호 : 000-111-222</p>
+	</div>
+</div>잘라내기
+-views/include -> bottom_info.jsp에 붙여넣기
+
+컴파일시 하단메뉴 없어지므로
+main.jsp에서
+하단메뉴있던 자리에
+<c:import url="/WEB-INF/views/include/bottom_info.jsp"/>
+
+=================================================
+5.홈버튼
+- top_menu.jsp
+수정
+<a class="navbar-brand" href="main">SoftSoldesk</a>
+게시글 링크
+	<div class="collapse navbar-collapse" id="navMenu">
+		<ul class="navbar-nav">
+			<li class="nav-item">
+				수정	
+				<a href="board/main" class="nav-link">자유게시판</a>
+			</li>
+			<li class="nav-item">
+				수정
+				<a href="board/main" class="nav-link">유머게시판</a>
+			</li>
+			<li class="nav-item">
+				수정
+				<a href="board/main" class="nav-link">정치게시판</a>
+			</li>
+			<li class="nav-item">
+				수정
+				<a href="board/main" class="nav-link">스포츠게시판</a>
+			</li>
+		</ul>
+
+
+
+-BoardController.java
+
+@Controller
+@RequestMapping("/board")
+public class BoardController {
+	
+	@GetMapping("/main")
+	public String main() {
+		return "board/main";
+	}
+}
+
+-views/board->main.jsp
+
+MiniProjectHTML에 board_main.html을 복사하여 views/board->main.jsp에 붙이기
+
+상단 하단 메뉴 삭제후 링크로 연결하기
+
+컴파일후 자유게시판을 누르면 연결됨
+홈버튼을 누르면 상대 경로로연결됨 http://localhost:9010/MiniProjectJava/board/main
+
+=====================================
+6.절대경로 설정
+1차 수정
+-top_menu.jsp
+<a class="navbar-brand" href="/main">SoftSoldesk</a>
+http://localhost:9010/main -> 404Error
+=============================
+2차수정
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var='root' value="${pageContext.request.contextPath }/"/>
+
+<a class="navbar-brand" href="${root }main">SoftSoldesk</a>
+
+	<div class="collapse navbar-collapse" id="navMenu">
+		<ul class="navbar-nav">
+			<li class="nav-item">
+				<a href="${root }board/main" class="nav-link">자유게시판</a>
+			</li>
+			<li class="nav-item">
+				<a href="${root }board/main" class="nav-link">유머게시판</a>
+			</li>
+			<li class="nav-item">
+				<a href="${root }board/main" class="nav-link">정치게시판</a>
+			</li>
+			<li class="nav-item">
+				<a href="${root }board/main" class="nav-link">스포츠게시판</a>
+			</li>
+		</ul>
+
+컴파일시 잘 연결됨 http://localhost:9010/MiniProjectJava/main
+================================================
+7.user 연결하기
+
+-top_menu.jsp
+
+수정
+<ul class="navbar-nav ml-auto">
+	<li class="nav-item">
+		<a href="${root }user/login" class="nav-link">로그인</a>
+	</li>
+
+-UserController.java
+@Controller
+@RequestMapping("/user")
+public class UserController {
+
+	@GetMapping("/login")
+	public String login() {
+		return "user/login";
+	}
+}
+
+-views/user->login.jsp 
+
+MiniProjectHTML에 login.html 복사 
+views/user->login.jsp 붙여넣기
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var='root' value="${pageContext.request.contextPath }/"/>
+....
+
+상단 하단 링크
+
+==============================================
+8.회원가입
+
+-top_menu.jsp
+
+수정
+<li class="nav-item">
+	<a href="${root }user/join" class="nav-link">회원가입</a>
+</li>
+
+
+-UserController.java
+추가
+	@GetMapping("/join")
+	public String join() {
+		return "user/join";
+	}
+
+
+-views/user->join.jsp
+MiniProjectHTML에서 join.html복사 views/user->join.jsp붙여넣기
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var='root' value="${pageContext.request.contextPath }/"/>
+...
+상단 하단 링크걸기
+
+==================================
+9.수정
+ -top_menu.jsp
+수정
+<li class="nav-item">
+	<a href="${root }user/modify" class="nav-link">정보수정</a>
+</li>
+
+-UserController.java
+추가
+@GetMapping("/modify")
+public String modify() {
+return "user/modify";
+}
+
+-views/user->modify.jsp
+MiniProjectHTML에 modify_user.html 복사 views/user->modify.jsp 붙여넣기
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var='root' value="${pageContext.request.contextPath }/"/>
+...
+상단 하단 링크걸기
+===========================
+10.로그아웃
+ -top_menu.jsp
+수정
+<li class="nav-item">
+	<a href="${root }user/logout" class="nav-link">로그아웃</a>
+</li>
+
+-UserController.java
+추가
+@GetMapping("/logout")
+public String logout() {
+return "user/logout";
+	}
+
+-views/user->logout.jsp
+
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<c:set var='root' value="${pageContext.request.contextPath }/"/>
+<script>
+	alert('로그아웃 되었습니다')
+	location.href = '${root}main'
+</script>
+
+==============================
+XML
+JAVA src와 views복사 붙여넣기
+

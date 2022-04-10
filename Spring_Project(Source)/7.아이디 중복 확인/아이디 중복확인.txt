@@ -1,0 +1,233 @@
+아이디 중복 확인
+(서버로 아이디를 보내서 비교 판단한다 이때 서버는 응답결과를 브라우져로 보내는데 
+응답결과가 데이터이면 RestController이고 html이면 Controller로 브라우져에게 응답한다)
+1.
+-kr.co.softcampus.mapper -> UserMapper.java (인터페이스)
+public interface UserMapper {
+	
+	@Select("select user_name " +
+			"from user_table " +
+			"where user_id = #{user_id}")
+	String checkUserIdExist(String user_id);
+}
+
+
+-ServletAppContext.java (mapper등록)
+	@Bean
+	public MapperFactoryBean<UserMapper> getUserMapper(SqlSessionFactory factory) throws Exception{
+		MapperFactoryBean<UserMapper> factoryBean = new MapperFactoryBean<UserMapper>(UserMapper.class);
+		factoryBean.setSqlSessionFactory(factory);
+		return factoryBean;
+	}
+
+
+-kr.co.softsoldesk.dao -> UserDao.java
+
+@Repository
+public class UserDao {
+	
+	@Autowired //mapper 주입
+	private UserMapper userMapper;
+	
+        //입력받은 아이디 반환
+	public String checkUserIdExist(String user_id) {
+		return userMapper.checkUserIdExist(user_id);
+	}
+}
+
+-kr.co.softsoldesk.service -> UserService.java (확인메소드 구현)
+@Service
+public class UserService {
+	
+	@Autowired
+	private UserDao userDao; //데이터베이스 주입
+	
+            //넘겨받은 아이디가 사용가능한지 여부 판단
+	public boolean checkuserIdExist(String user_id) {
+		
+		String user_name = userDao.checkUserIdExist(user_id);
+		
+		if(user_name == null) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+ 
+-kr.co.softsoldesk.controller -> RestApiController.java (데이터형식이므로 Rest사용)
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
+
+import kr.co.softcampus.service.UserService;
+
+@RestController
+public class RestApiController {
+	
+	@Autowired
+	private UserService userService; //서비스 메소드 주입
+	
+	@GetMapping("/user/checkUserIdExist/{user_id}")
+	public String checkUserIdExist(@PathVariable String user_id) { //@PathVariable :주소에  데이터 붙이기
+		
+		boolean chk = userService.checkuserIdExist(user_id); //메소드 호출
+		
+		return chk + "";
+	}
+}
+컴파일후 http://localhost:9010/MiniProjectJava/main에서 main을 지우고 /user/checkUserIdExist/abcd -> true (없는 아이디로 반환값 얻음)
+======================================================================
+2.XML Setting
+
+-/WEB-INF/mapper -> user_mapper.xml (board_mapper.xml 복붙하여 수정+자바 mapper참고)
+
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+					    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="user">
+	<select id="checkUserIdExist" parameterType="java.lang.String" resultType="java.lang.String">
+		select user_name
+		from user_table
+		where user_id = #{user_id}
+	</select>
+</mapper>
+
+-package kr.co.softsoldesk.dao -> UserDao.java
+@Repository
+public class UserDao {
+	
+	@Autowired
+	private SqlSessionTemplate sqlSessionTemplate;
+	
+	public String checkUserIdExist(String user_id) {
+		return sqlSessionTemplate.selectOne("user.checkUserIdExist", user_id);
+	}
+}
+
+-kr.co.softsoldesk.service -> UserService.java (자바서비스 참조 복붙)
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import kr.co.softcampus.dao.UserDao;
+
+@Service
+public class UserService {
+	
+	@Autowired
+	private UserDao userDao;
+	
+	public boolean checkuserIdExist(String user_id) {
+		
+		String user_name = userDao.checkUserIdExist(user_id);
+		
+		if(user_name == null) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+
+-kr.co.softsoldesk.controller -> RestApiController.java (데이터형식이므로 Rest사용) 자바 복붙
+
+컴파일후 http://localhost:9010/MiniProjectJava/main에서 main을 지우고 /user/checkUserIdExist/abcd -> true (없는 아이디로 반환값 얻음)
+=========================================================
+3.JAVA $.ajax
+- /WEB-INF/user/join.jsp
+  onclick='checkUserIdExist()' ==> 코드 추가
+  <button type="button" class="btn btn-primary" onclick='checkUserIdExist()'>중복확인</button>
+
+  유효성 등록(<form:hidden path="userIdExist"/> 와 onkeypress="resetUserIdExist()")
+  <form:label path="user_id">아이디</form:label>
+	<form:form action="${root }user/join_pro" method='post' modelAttribute="joinUserBean">
+	<!-- 유효성 검사여부 보내기 -->
+		***<form:hidden path="userIdExist"/>***
+			<div class="form-group">
+				<form:label path="user_name">이름</form:label>
+					<form:input path="user_name" class='form-control'/>
+					<form:errors path="user_name" style='color:red'/>
+			</div>
+			<div class="form-group">
+					<form:label path="user_id">아이디</form:label>
+			<div class="input-group">
+                             <!-- onkeypress="resetUserIdExist() :사용자가 입력을 하면 발생하는 이벤트로써 resetUserIdExist()함수 호출 -->
+				         ***<form:input path="user_id" class='form-control' onkeypress="resetUserIdExist()"/>***
+			<div class="input-group-append">
+---------------------------------------------------------------
+
+</head>
+<script>
+	function checkUserIdExist(){
+		//변수선언 : 사용자가 입력한 id값 가져오기
+		var user_id = $("#user_id").val()
+		//입력값이 없을시 요청
+		if(user_id.length == 0){
+			alert('아이디를 입력해주세요')
+			return
+		}
+		
+		$.ajax({
+			url : '${root}user/checkUserIdExist/' + user_id, //요청할 페이지의 주소
+			type : 'get', //요청타입
+			dataType : 'text', //문자열
+			//성공시 호출할 함수
+			success : function(result){
+				if(result.trim() == 'true'){
+					alert('사용할 수 있는 아이디입니다')
+					$("#userIdExist").val('true')//유효성 체크
+				} else {
+					alert('사용할 수 없는 아이디 입니다')
+					$("#userIdExist").val('false')
+				}
+			}
+		})
+	}
+	//사용자 아이디란에 입력하면 무조건 false
+	function resetUserIdExist(){
+		$("#userIdExist").val('false')
+	}
+</script>
+
+<body>
+----------------------------------------------------------------------------------------
+-UserBean.java에 등록
+private boolean userIdExist; (getter and setter)
+//초기화 :처음에는 중복검사를 하지 않으므로 false
+public UserBean() {
+		this.userIdExist = false;
+	}
+
+
+-UserValidator.java
+@Override
+	public void validate(Object target, Errors errors) {
+		// TODO Auto-generated method stub
+		//형변환
+		UserBean userBean = (UserBean)target;
+		
+		if(userBean.getUser_pw().equals(userBean.getUser_pw2()) == false) {
+			errors.rejectValue("user_pw", "NotEquals");
+			errors.rejectValue("user_pw2", "NotEquals");
+		}
+		
+		***if(userBean.isUserIdExist() == false) {
+			errors.rejectValue("user_id", "DontCheckUserIdExist");
+		}***
+	}
+
+-error_message.properties 코드 추가
+DontCheckUserIdExist.joinUserBean.user_id = 중복확인을 해주세요
+===================================
+4.XML $.ajax
+
+- /WEB-INF/user/join.jsp (JAVA 복붙)
+
+-UserBean.java (JAVA 복붙)
+
+-UserValidator.java (JAVA 복붙)
+
+-error_message.properties 코드 추가

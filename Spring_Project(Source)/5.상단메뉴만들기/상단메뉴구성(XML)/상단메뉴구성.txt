@@ -1,0 +1,79 @@
+1.
+mapper 만들기
+-WEB-INF/mapper -> 파일만들기(top_menu_mapper.xml)
+board_mapper.xml의 코드를 복붙
+sql문은 자바 kr.co.softsoldesk.mapper에서 TopMenuMapper.java 파일 참고
+
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+					    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="topmenu">
+	<select id="get_topmenu_list" resultType='kr.co.softsoldesk.beans.BoardInfoBean'>
+		<!-- 특수 문자가 자유롭고 한줄 코딩을 할 필요가 없음  -->
+		<![CDATA[
+			select board_info_idx, board_info_name
+			from board_info_table
+			order by board_info_idx
+		]]>
+	</select>
+</mapper>
+------------------------------------------------------
+mapper 등록
+- servlet-context.xml 
+(이미 등록되어 있으므로 구현생략)
+<beans:property name="mapperLocations" value='/WEB-INF/mapper/*.xml'/>
+
+-자바 kr.co.softsoldesk.dao 복붙
+//오라클에서 데이터 받아오기
+//Bean중에 DAO는 Repository로 등록
+@Repository
+public class TopMenuDao {
+           //servlet-context.xml에 있는 <!-- 쿼리문 동작 --> class참조
+	@Autowired
+	private SqlSessionTemplate sqlSessionTemplate;
+	
+	public List<BoardInfoBean> getTopMenuList(){
+		//topmenu.get_topmenu_list : top_menu_mapper.xml의 namespace 와 id
+		List<BoardInfoBean> topMenuList = sqlSessionTemplate.selectList("topmenu.get_topmenu_list");
+		return topMenuList;
+
+	}
+
+- servlet-context.xml  등록
+//dao 등록
+  <context:component-scan base-package="kr.co.softsoldesk.dao"/>
+-----------------------------------------------------
+-kr.co.softsoldesk.service 복붙
+
+-servlet-context.xml  등록
+<context:component-scan base-package="kr.co.softsoldesk.service"/>
+
+-kr.co.softsoldesk.interceptor ->  TopMenuInterceptor.java 복붙
+public class TopMenuInterceptor implements HandlerInterceptor{
+    //interceptor에서는 자동주입을 받을수 있음(생성자 불필요)
+	@Autowired
+	private TopMenuService topMenuService;
+	
+	@Override
+	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+			throws Exception {
+		// TODO Auto-generated method stub
+		List<BoardInfoBean> topMenuList = topMenuService.getTopMenuList();
+		request.setAttribute("topMenuList", topMenuList);
+		
+		return true;
+	}
+}
+
+-servlet-context.xml  interceptor 등록
+맨아래
+	<interceptors>
+		<interceptor>
+			<mapping path="/**"/>
+			<beans:bean class='kr.co.softsoldesk.interceptor.TopMenuInterceptor'/>
+		</interceptor>
+	</interceptors>
+
+-자바 include/top_menu.jsp 복붙
+컴파일 후 소스보기
+==============================================

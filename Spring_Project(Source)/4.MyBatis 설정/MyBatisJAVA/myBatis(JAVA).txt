@@ -1,0 +1,118 @@
+﻿MyBatis
+
+1.jar파일 가져오기(Java와 XML)
+
+-D:\app\admin\product\11.2.0\dbhome_1\jdbc\lib에서 Ojdbc6.jar 복사
+WebContent/WEB-INF/lib에 붙여넣기
+
+-WebContent/WEB-INF/properties
+db.properties파일 생성
+db.classname = oracle.jdbc.OracleDriver
+db.url = jdbc:oracle:thin:@localhost:1521:orcl
+db.username = scott
+db.password = 12341234
+=========================================
+2-1.JAVA->JDBC 구축
+
+- kr.co.softsoldesk.mapper -> BoardMapper.java (인터페이스)
+코드없음
+
+-  ServletAppContext.java
+@PropertySource("/WEB-INF/properties/db.properties")
+public class ServletAppContext implements WebMvcConfigurer{
+	
+	@Value("${db.classname}")
+	private String db_classname;
+	
+	@Value("${db.url}")
+	private String db_url;
+	
+	@Value("${db.username}")
+	private String db_username;
+	
+	@Value("${db.password}")
+	private String db_password;
+...
+
+	// 데이터베이스 접속 정보를 관리하는 Bean
+            import org.apache.commons.dbcp2.BasicDataSource;
+
+	@Bean
+	public BasicDataSource dataSource() {
+		BasicDataSource source = new BasicDataSource();
+		source.setDriverClassName(db_classname);
+		source.setUrl(db_url);
+		source.setUsername(db_username);
+		source.setPassword(db_password);
+		
+		return source;
+	}
+	
+	// 쿼리문과 접속 정보를 관리하는 객체
+	@Bean
+	public SqlSessionFactory factory(BasicDataSource source) throws Exception{
+		SqlSessionFactoryBean factoryBean = new SqlSessionFactoryBean();
+		factoryBean.setDataSource(source);
+		SqlSessionFactory factory = factoryBean.getObject();
+		return factory;
+	}
+	
+	// 쿼리문 실행을 위한 객체(Mapper 관리)
+	@Bean
+	public MapperFactoryBean<BoardMapper> getBoardMapper(SqlSessionFactory factory) throws Exception{
+		MapperFactoryBean<BoardMapper> factoryBean = new MapperFactoryBean<BoardMapper>(BoardMapper.class);
+		factoryBean.setSqlSessionFactory(factory);
+		return factoryBean;
+	}
+
+아무변화없으면 성공
+=================================================
+2-2. XML -> JDBC
+- properties폴더 복 붙
+
+-WebContent/WEB-INF/ -> mapper폴더 만들기
+board_mapper.xml 파일 생성
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+		    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="board">
+
+</mapper>
+
+-servlet-context.xml
+	<!-- properties 파일의 내용을 사용할수 있도록 Bean을 정의한다. -->
+	<beans:bean class='org.springframework.beans.factory.config.PropertyPlaceholderConfigurer'>
+		<beans:property name="location">
+			<beans:value>/WEB-INF/properties/db.properties</beans:value>
+		</beans:property>
+	</beans:bean>
+	<!-- 드라이버 설정 -->
+	<beans:bean class='org.apache.commons.dbcp2.BasicDataSource' id='basic_data_source'>
+		<beans:property name="driverClassName" value="${db.classname}"/>
+		<beans:property name="url" value="${db.url}"/>
+		<beans:property name='username' value="${db.username}"/>
+		<beans:property name="password" value="${db.password}"/>
+	</beans:bean>
+	<!-- 쿼리문 관리 -->	
+	<beans:bean class='org.mybatis.spring.SqlSessionFactoryBean' id='sqlSession'>
+		<beans:property name="dataSource" ref='basic_data_source'/>
+		<beans:property name="mapperLocations" value='/WEB-INF/mapper/*.xml'/>
+	</beans:bean>
+	<!-- 쿼리문 동작 -->
+	<beans:bean class='org.mybatis.spring.SqlSessionTemplate' id='sqlSessionTemplate'>
+		<beans:constructor-arg index='0' ref='sqlSession'/>
+	</beans:bean>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

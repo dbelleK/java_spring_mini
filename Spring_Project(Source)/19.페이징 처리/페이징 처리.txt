@@ -1,0 +1,251 @@
+﻿페이징 처리
+
+1.게시글 추가
+
+- BoardDao.java
+
+	public void addContentInfo(ContentBean writeContentBean) {
+		for (int i=0;i<542; i++) {
+		boardMapper.addContentInfo(writeContentBean);
+		}
+	}
+
+로그인 후 글 작성하면 542개의 글이 등록됨
+등록후
+	public void addContentInfo(ContentBean writeContentBean) {
+		boardMapper.addContentInfo(writeContentBean);
+	}
+복구
+====================================================
+2. 10개씩 끊어줌
+-option.properties (10개씩 끊어줌)
+page.listcnt = 10
+page.paginationcnt = 10
+
+-BoardController.java
+@GetMapping("/main")
+	public String main(@RequestParam("board_info_idx") int board_info_idx,
+			@RequestParam(value = "page", defaultValue = "1") int page,	
+			Model model) {
+		
+		model.addAttribute("board_info_idx", board_info_idx);
+		
+		String boardInfoName = boardService.getBoardInfoName(board_info_idx);
+		model.addAttribute("boardInfoName", boardInfoName);
+		
+		List<ContentBean> contentList = boardService.getContentList(board_info_idx, ***page***);
+		model.addAttribute("contentList", contentList);
+				
+		return "board/main";
+	}
+
+-BoardService.java
+	***
+	@Value("${page.listcnt}")
+	private int page_listcnt;
+
+	@Value("${page.paginationcnt}")
+	private int page_paginationcnt;
+	***
+	.....
+	public List<ContentBean> getContentList(int board_info_idx, ** int page **){
+	   /* 
+	    1->0
+	    2->10
+	    3->20
+	    */	
+		***
+		int start = (page - 1) * page_listcnt;
+		RowBounds rowBounds = new RowBounds(start, page_listcnt);
+		***
+		
+		return boardDao.getContentList(board_info_idx, **rowBounds**);
+	}
+
+-BoardDao.java
+	public List<ContentBean> getContentList(int board_info_idx, ***RowBounds rowBounds***){
+		return boardMapper.getContentList(board_info_idx, ***rowBounds***);
+	}
+
+-BoardMapper.java
+	//RowBounds : 두개의 값을 세팅하여 어디서부터 몇개인지를 세팅
+	List<ContentBean> getContentList(int board_info_idx, ***RowBounds rowBounds***);
+
+컴파일 http://localhost:9010/MiniProjectJava/board/main?board_info_idx=1&page=2
+========================================================
+3.10페이지씩 구현하기
+-PageBean.java
+public class PageBean {
+	
+	// 최소 페이지 번호
+	private int min;
+	// 최대 페이지 번호
+	private int max;
+	// 이전 버튼의 페이지 번호
+	private int prevPage;
+	// 다음 버튼의 페이지 번호
+	private int nextPage;
+	// 전체 페이지 개수
+	private int pageCnt;
+	// 현재 페이지 번호
+	private int currentPage;
+
+	(getter만 추가)
+	
+	// contentCnt : 전체글 개수(table), currentPage : 현재 글 번호(param), contentPageCnt : 페이지당 글의 개수(property), paginationCnt : 페이지 버튼의 개수(property)
+	public PageBean(int contentCnt, int currentPage, int contentPageCnt, int paginationCnt) {
+		
+		// 현재 페이지 번호
+		this.currentPage = currentPage;
+		
+		// 전체 페이지 개수
+		pageCnt = contentCnt / contentPageCnt;
+		//53=533/10 이므로 1page더 필요
+		if(contentCnt % contentPageCnt > 0) {
+			pageCnt++;
+		}
+		/* 
+		 1 ~ 10 : 1(최소), 10(최대)
+		 11 ~ 20 : 11, 20
+		 21 ~ 30 : 21, 30
+		
+		//최대 10,20,30은 최소에 9를 더하면 되므로 -1을 해줌 -> 최소에 9씩 증가
+		 //-1
+		 0 ~ 9 : 1
+		 10 ~ 19 : 11
+		 20 ~ 29 : 21
+		
+		//페이지당 글의갯수로 나누면
+		0 : 1/10
+		1 : 11/10
+		2 : 21/10
+		//페이지당 글의갯수로 다시 곱하면
+		0:1
+		10:11
+		20:21
+		//+1를 하면
+		1:1
+		11:11
+		21:21*/
+		
+		min = ((currentPage - 1) / contentPageCnt) * contentPageCnt + 1;
+		max = min + paginationCnt - 1; //1+10=11이므로 1을 빼줌
+		//글의 갯수가 63일때 max=10 ,  pageCnt=6 
+		// 10개를 다 표시할 필요가 없으므로 최대를 6으로 자름
+		if(max > pageCnt) {
+			max = pageCnt;
+		}
+		
+		prevPage = min - 1;
+		nextPage = max + 1;
+		//마지막페이지를 넘어가지 않도록
+		if(nextPage > pageCnt) {
+			nextPage = pageCnt;
+		}
+	}
+                .....
+
+-BoardMapper.java
+	//해당게시판의 전체글의 수 자져오기
+	@Select("select count(*) from content_table where content_board_idx = #{content_board_idx}")
+	int getContentCnt(int content_board_idx);
+
+-BoardDao.java
+	public int getContentCnt(int content_board_idx) {
+		return boardMapper.getContentCnt(content_board_idx);
+	}
+
+-BoardService.java
+	public PageBean getContentCnt(int content_board_idx, int currentPage) {
+		//전체글의 갯수
+		int content_cnt = boardDao.getContentCnt(content_board_idx);
+		
+		PageBean pageBean = new PageBean(content_cnt, currentPage, page_listcnt, page_paginationcnt);
+		
+		return pageBean;
+	}
+
+-BoardController.java
+	@GetMapping("/main")
+	public String main(@RequestParam("board_info_idx") int board_info_idx,
+					   @RequestParam(value = "page", defaultValue = "1") int page,	
+					   Model model) {
+		
+		model.addAttribute("board_info_idx", board_info_idx);
+		
+		String boardInfoName = boardService.getBoardInfoName(board_info_idx);
+		model.addAttribute("boardInfoName", boardInfoName);
+		
+		List<ContentBean> contentList = boardService.getContentList(board_info_idx, page);
+		model.addAttribute("contentList", contentList);
+		
+		*** PageBean pageBean = boardService.getContentCnt(board_info_idx, page);
+		model.addAttribute("pageBean", pageBean); ***
+		
+		return "board/main";
+	}
+
+-main.jsp			
+		<div class="d-none d-md-block">
+				<ul class="pagination justify-content-center">
+					<c:choose>
+					<c:when test="${pageBean.prevPage <= 0 }">
+					<!-- 이전페이지가 1이하이면 비활성화 -->
+					<li class="page-item disabled">
+						<a href="#" class="page-link">이전</a>
+					</li>
+					</c:when>
+					<c:otherwise>
+					<li class="page-item">
+						<a href="${root }board/main?board_info_idx=${board_info_idx}&page=${pageBean.prevPage}" class="page-link">이전</a>
+					</li>
+					</c:otherwise>
+					</c:choose>
+					
+					
+					<c:forEach var='idx' begin="${pageBean.min }" end='${pageBean.max }'>
+					<c:choose>
+					<!-- 현재페이지면 active(부트스트랩 클래스)-->
+					<c:when test="${idx == pageBean.currentPage }">
+					<li class="page-item active">
+						<a href="${root }board/main?board_info_idx=${board_info_idx}&page=${idx}" class="page-link">${idx }</a>
+					</li>
+					</c:when>
+					<c:otherwise>
+					<li class="page-item">
+						<a href="${root }board/main?board_info_idx=${board_info_idx}&page=${idx}" class="page-link">${idx }</a>
+					</li>
+					</c:otherwise>
+					</c:choose>
+					
+					</c:forEach>
+					
+					<!-- MAX값이 전체페이지보다 크거나 같으면 비활성화 disabled(부트스트랩)-->
+					<c:choose>
+					<c:when test="${pageBean.max >= pageBean.pageCnt }">
+					<li class="page-item disabled">
+						<a href="#" class="page-link">다음</a>
+					</li>
+					</c:when>
+					<c:otherwise>
+					<li class="page-item">
+						<a href="${root }board/main?board_info_idx=${board_info_idx}&page=${pageBean.nextPage}" class="page-link">다음</a>
+					</li>
+					</c:otherwise>
+					</c:choose>
+					
+				</ul>
+			</div>
+			
+			<div class="text-right">
+				<a href="${root }board/write?board_info_idx=${board_info_idx}" class="btn btn-primary">글쓰기</a>
+			</div>
+			
+		</div>
+	</div>
+</div>
+
+<c:import url="/WEB-INF/views/include/bottom_info.jsp"/>
+
+</body>
+</html>
