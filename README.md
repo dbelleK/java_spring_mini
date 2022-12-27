@@ -1,2 +1,2 @@
 # java_spring_mini
-mimi javaspring study
+기본 javaspring study
