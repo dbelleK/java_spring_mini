@@ -1,2 +1,2 @@
 # java_spring_mini
-mini javaspring study
+javaspring study
